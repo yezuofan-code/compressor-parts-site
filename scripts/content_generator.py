@@ -67,12 +67,24 @@ def _slugify(text: str) -> str:
     return text.strip('-')
 
 
-def _truncate_title(text: str, max_len: int = 70) -> str:
-    """Truncate product title for use in article."""
-    patterns = ['-aliexpress', 'Free Shipping', 'Free shipping', 'Wholesale', 'wholesale',
-                'In Stock', 'in stock', 'DropShipping', 'dropshipping']
+def _truncate_title(text: str, max_len: int = 40) -> str:
+    """Shorten product title for clean display in articles.
+
+    Strips out keyword-stuffing patterns common on AliExpress,
+    keeps the core product name short and readable.
+    """
+    patterns = [
+        '-aliexpress', 'Free Shipping', 'Free shipping', 'Wholesale', 'wholesale',
+        'In Stock', 'in stock', 'DropShipping', 'dropshipping', 'Direct sale',
+        'hot sale', 'Hot Sale', 'New Arrival', 'new arrival', 'High Quality',
+        'high quality', 'Original', 'original', 'Accessories', 'accessories',
+        'for DJI', 'For DJI', 'For ', 'for ', 'Parts', 'parts',
+        'Repair', 'repair', 'Replacement', 'replacement',
+    ]
     for p in patterns:
         text = text.replace(p, '').strip()
+    # Remove extra whitespace
+    text = ' '.join(text.split())
     if len(text) > max_len:
         text = text[:max_len-3] + '...'
     return text.strip()
@@ -86,7 +98,8 @@ def search_products_for_keyword(keyword: str, config: dict, max_results: int = 6
     max_price = config.get('max_price', 200)
     category_ids = config.get('category_ids', '')
 
-    # Try multiple search strategies
+    # Try multiple search strategies - but limit results to MAX 3 products
+    max_results = min(max_results, 3)
     for sort in ['LAST_VOLUME_DESC', 'SALE_PRICE_ASC']:
         resp = search_products(
             keywords=keyword,
@@ -133,109 +146,179 @@ def search_products_for_keyword(keyword: str, config: dict, max_results: int = 6
 
 
 def generate_article(keyword: str, products: list, config: dict) -> dict:
-    """Generate a printer parts article using LLM."""
+    """Generate a problem-solving repair guide using LLM.
+
+    The focus is on being genuinely helpful: teaching the reader how to
+    diagnose and fix their printer problem. Products are mentioned only
+    briefly as part of the solution, NOT the focus of the article.
+
+    Each section must be DEEP and SPECIFIC — like a real repair manual,
+    not a blog skim.
+    """
     niche_name = config.get('niche_name', 'Printer Parts')
     site_name = config.get('site_title', 'Printer Parts Review')
 
-    # Build product catalogue for AI
-    product_catalogue = []
-    for i, p in enumerate(products):
-        product_catalogue.append(
-            f'Product #{i+1}: ID={p["id"]}\n'
-            f'  Name: {p["title"][:80]}\n'
-            f'  Short Name: {p["short_name"]}\n'
-            f'  Price: ${p["price"]}\n'
-            f'  Rating: {p["rating"]}/5\n'
-            f'  Sales (30d): {p["sales"]}\n'
+    product_notes = []
+    for i, p in enumerate(products[:3]):
+        product_notes.append(
+            f'Part #{i+1}: {p["short_name"]} — ${p["price"]}'
         )
-    product_catalogue_str = '\n'.join(product_catalogue)
+    product_notes_str = '\n'.join(product_notes)
     product_ids = [p['id'] for p in products]
 
     # Determine article type
     article_type = _get_article_type(keyword)
 
-    # Build type-specific prompt
+    # Build type-specific prompt - all focused on HELPING, not selling
     type_instructions = {
-        "comparison": (
-            "Write a COMPARISON article comparing these products side by side.\n"
-            "- Compare prices, build quality, compatibility\n"
-            "- Award winners: 'Best Overall', 'Best Budget', 'Best Value'\n"
-            "- Use a comparison table in one section"
-        ),
-        "buying_guide": (
-            "Write a BUYING GUIDE / buyer's guide article.\n"
-            "- Explain what to look for when choosing this part\n"
-            "- Feature the products as recommendations throughout\n"
-            "- Include a 'What to Consider' section"
-        ),
-        "review": (
-            "Write a PRODUCT REVIEW article.\n"
-            "- Pick the best 2-3 products as top picks\n"
-            "- Include pros/cons for each featured product\n"
-            "- End with a final verdict"
-        ),
-        "compatibility": (
-            "Write a COMPATIBILITY GUIDE.\n"
-            "- Explain which printer models are compatible with this part\n"
-            "- Cross-reference different brand/model compatibility\n"
-            "- Include a compatibility table"
+        "problem_solution": (
+            "This is a DIAGNOSIS & REPAIR GUIDE. Structure it like a repair manual:\n"
+            "1. SYMPTOMS — What the user experiences (error code, weird noise, paper jam, streaks)\n"
+            "2. DIAGNOSIS — How to confirm the root cause (step-by-step checks)\n"
+            "3. ROOT CAUSE — Explain why this happens (worn gear, broken roller, etc.)\n"
+            "4. REPAIR OPTIONS — DIY vs professional, cost comparison\n"
+            "5. REPAIR STEPS — Brief overview of what's involved\n"
+            "6. PARTS NEEDED — Briefly list the parts (this is where products appear)"
         ),
         "replacement_guide": (
-            "Write a REPLACEMENT GUIDE / upgrade guide.\n"
-            "- Explain when/how to replace this part\n"
-            "- Recommend specific products for the job\n"
-            "- Include tips for DIY installation"
+            "This is a REPLACEMENT TUTORIAL. Structure it like a workshop guide:\n"
+            "1. WHEN TO REPLACE — Signs that replacement is needed\n"
+            "2. TOOLS NEEDED — What you'll need\n"
+            "3. REPLACEMENT STEPS — Step by step process\n"
+            "4. PARTS OPTIONS — What to buy (briefly, this is where products appear)\n"
+            "5. TIPS — Common mistakes and how to avoid them"
         ),
-        "problem_solution": (
-            "Write a PROBLEM-SOLVING / FIX guide article.\n"
-            "- Start with a REAL printer problem: error code, paper jam, streaks, noise, ghosting, etc.\n"
-            "- Explain WHY this problem happens (root cause: worn part, broken gear, etc.)\n"
-            "- Walk through diagnosis step by step\n"
-            "- Recommend the specific replacement part as the solution\n"
-            "- Include a 'Symptoms Checklist' so readers can self-diagnose\n"
-            "- Price the repair: 'Fix it yourself for $X vs repair shop $300'\n"
-            "- TONE: like a knowledgeable repair tech, not a salesman"
+        "compatibility": (
+            "This is a COMPATIBILITY REFERENCE GUIDE:\n"
+            "1. WHAT FITS WHAT — Cross-reference table of models and compatible parts\n"
+            "2. OEM vs COMPATIBLE — Real differences explained\n"
+            "3. HOW TO VERIFY — Check before you buy\n"
+            "4. PARTS LIST — Parts that work (brief product mentions)"
+        ),
+        "comparison": (
+            "This is a SIDE-BY-SIDE COMPARISON FOR INFORMED BUYING:\n"
+            "1. WHAT TO LOOK FOR — Key specs that matter\n"
+            "2. COMPARISON TABLE — Side by side specs\n"
+            "3. REAL DIFFERENCES — Price vs quality vs lifespan\n"
+            "4. RECOMMENDATION — Brief, honest pick"
+        ),
+        "buying_guide": (
+            "This is an EDUCATIONAL BUYING GUIDE:\n"
+            "1. UNDERSTAND THE PART — What it does, how it works\n"
+            "2. KEY SPECS — What to pay attention to\n"
+            "3. BRAND OPTIONS — Different choices explained\n"
+            "4. PRICE RANGE — What you should expect to pay"
         ),
     }
-    article_instructions = type_instructions.get(article_type, type_instructions['buying_guide'])
 
-    prompt = f"""You are an expert printer repair parts reviewer for {site_name}. Write a detailed, helpful article about {keyword}.
+    # Default to problem_solution if not specified
+    instructions = type_instructions.get(article_type, type_instructions["problem_solution"])
 
-Below are REAL products from AliExpress related to this topic. Feature them naturally in the article.
+    prompt = f"""You write in-depth repair guides for {site_name}. Write a comprehensive, detailed article about: {keyword}
 
-{product_catalogue_str}
+Your reader's device JUST BROKE. They are frustrated and searching for answers.
+They want to understand EXACTLY what's wrong and how to fix it.
 
-{article_instructions}
+⚠️ CRITICAL FORMATTING REQUIREMENT:
+Every section below MUST be written in PROPER MARKDOWN FORMAT.
+Use numbered lists for steps, bullet points for items, and blank lines between paragraphs.
+Do NOT write walls of text. Readers need scannable, formatted content.
 
-Write the article in this exact JSON format (no markdown, no code fences, just raw JSON):
+REQUIRED STRUCTURE — each section must be 4-8 detailed paragraphs:
+
+1. THE PROBLEM IN DETAIL
+   - Describe EXACTLY what the user experiences (specific sounds, error codes on screen, visual symptoms, behavior changes)
+   - Include multiple scenarios: "Some users report X, while others experience Y"
+   - When does it happen? (on startup, during use, after a crash, after firmware update)
+   - How does it progress? (gets worse over time? sudden failure?)
+
+2. STEP-BY-STEP DIAGNOSIS
+   - Numbered steps the reader can follow RIGHT NOW with basic tools
+   - Include what NORMAL looks like vs ABNORMAL
+   - Include a "quick check" for beginners AND a "detailed check" for advanced users
+   - Mention tools needed for each step (exact sizes, settings)
+
+3. ROOT CAUSE — Why This Happens
+   - Explain the engineering/mechanics behind the failure
+   - Give specific part names and numbers
+   - Explain what conditions accelerate this failure (heat, dust, crash force, age, wear)
+   - Reference specific models and known issues
+
+4. CAN YOU FIX IT? — Honest Assessment
+   - Difficulty level (1-5) and why
+   - Time required (in minutes)
+   - Skill level needed (soldering? just screwdriver?)
+   - Risks and what could go wrong
+   - Tools required with specifics
+
+5. DIY vs PROFESSIONAL — Real Cost Comparison
+   - DIY: specific part costs from the available parts
+   - Professional: typical repair shop rates
+   - When to skip DIY
+
+6. REPAIR PROCESS OVERVIEW
+   - Major steps the repair involves
+   - Common mistakes and how to avoid them
+
+7. AFTER REPAIR — Verification
+   - How to know the repair worked
+   - What to watch for in the first few hours
+
+Available parts for reference (mention only in section 5):
+{product_notes_str}
+
+CRITICAL RULES:
+- This is a REPAIR GUIDE, not a product review. 90% of content is the problem and fix.
+- Products appear ONLY in section 5 as a brief cost mention.
+- Every paragraph must contain NEW useful information, not fluff.
+- Include specific model names, error codes, part numbers, and measurements.
+- NEVER write "you should check if it's broken" — instead write WHAT to look for.
+- NEVER write "it might be this or that" — give a METHOD to determine which.
+
+Write the article in JSON format. IMPORTANT: ALL text fields MUST use Markdown formatting:
 {{
-  "title": "SEO-friendly article title (include the keyword naturally)",
-  "summary": "2-3 sentence overview of what the article covers.",
-  "body_sections": [
-    {{
-      "heading": "Section heading",
-      "text": "2-3 paragraphs of helpful content. Be specific, technical but accessible.",
-      "embed_product_ids": ["id1", "id2"],
-      "pros": ["Pro 1", "Pro 2", "Pro 3"],
-      "cons": ["Con 1", "Con 2"],
-      "best_for": "Best Overall / Best Budget / Editor's Pick"
-    }}
-  ],
-  "final_verdict": "Short paragraph with final recommendation.",
-  "image_prompt": "Detailed prompt for article cover image (product close-up style)",
-  "meta_description": "SEO meta description under 160 characters",
+  "title": "Problem-focused title, e.g. 'DJI Mini 4 Pro Arm Broken After Crash? Full Diagnosis & Repair Guide'",
+  "summary": "One paragraph summary of what problem this solves",
+  "problem_detail": "FULL MARKDOWN TEXT. Use numbered lists, bullet points, **bold** for emphasis. Blank lines between paragraphs.",
+  "diagnosis": "FULL MARKDOWN TEXT. MUST start with numbered steps like:\n\n1. First check this...\n2. Then check that...\n3. Normal vs abnormal comparison...",
+  "root_cause": "FULL MARKDOWN TEXT. Use paragraphs and bullet points for different causes.",
+  "fix_assessment": "FULL MARKDOWN TEXT. Use bullet points for difficulty/skill/time/risks.",
+  "cost_analysis": "FULL MARKDOWN TEXT. Use bullet points for cost breakdown.",
+  "repair_process": "FULL MARKDOWN TEXT. Numbered steps for the repair process.",
+  "after_repair": "FULL MARKDOWN TEXT. Bullet points for verification steps.",
+  "body_sections": [],
+  "image_prompt": "Detailed prompt for cover image",
+  "meta_description": "SEO description under 160 chars, start with the problem",
   "tags": ["tag1", "tag2", "tag3"],
-  "category": "fuser-assembly or pickup-roller or drum-unit or transfer-belt or printhead or maintenance-kit or toner"
+  "category": "one of: fuser-assembly pickup-roller drum-unit transfer-belt printhead maintenance-kit toner"
 }}
 
-CRITICAL REQUIREMENTS:
-1. Use Short Names in article text (not full raw product names)
-2. Conversational, expert tone. Not salesy.
-3. Each section: 100-180 words. 5-7 sections total.
-4. Include product_ids across ALL sections
-5. Include prices and ratings naturally in the text
-6. Write like a real knowledgeable blogger who has experience with printer repair
-7. The article must be genuinely helpful - someone fixing their printer should learn something"""
+FORMATTING REQUIREMENTS:
+✅ Each diagnosis step MUST be on its own line starting with a number: 1. , 2. , 3.
+✅ Use blank lines between every step or paragraph
+✅ Use **bold** for key terms (part names, error codes, tool names)
+✅ Use bullet points for lists of tools, causes, options
+✅ Never write more than 4 sentences without a line break
+❌ No wall-of-text paragraphs
+
+Example of correct formatting for the diagnosis field:
+
+\"\"\"
+1. **Visual Inspection**: Remove the battery and look at the arm closely. Normal: the arm is straight and the hinge is tight. Abnormal: you see a hairline crack or the arm wiggles.
+
+2. **Flex Test**: Gently try to bend the arm upward. Normal: it resists and springs back. Abnormal: it bends easily or makes a cracking sound.
+
+3. **Motor Alignment Check**: Spin the motor by hand. Normal: smooth rotation. Abnormal: the motor rubs against the arm because the mount is bent.
+\"\"\"
+
+DEPTH CHECKLIST — your article fails if:
+☐ Symptoms section doesn't mention specific error codes or sounds
+☐ Diagnosis doesn't have numbered steps the reader can actually do
+☐ Root cause doesn't explain WHY (not just "it's worn out")
+☐ Cost comparison doesn't have real dollar amounts
+☐ The reader could have written this after 2 minutes of Googling
+☐ Any sentence is vague enough to apply to a different problem
+☐ Text is not properly formatted with line breaks and bullet points"""
 
     headers = {
         'Authorization': f'Bearer {LLM_API_KEY}',
@@ -248,7 +331,7 @@ CRITICAL REQUIREMENTS:
             {'role': 'user', 'content': prompt},
         ],
         'temperature': 0.7,
-        'max_tokens': 4000,
+        'max_tokens': 8000,
     }
 
     try:
@@ -279,7 +362,8 @@ CRITICAL REQUIREMENTS:
 def generate_frontmatter(article: dict, image_path: str = '') -> str:
     """Generate Hugo frontmatter from article data.
 
-    Returns the full markdown text ready to save as a Hugo post.
+    Uses product data from parts_needed instead of products array,
+    since the article is now fix-focused not product-focused.
     """
     title = article.get('title', 'Printer Parts Review')
     slug = article.get('slug', _slugify(title))
@@ -288,21 +372,20 @@ def generate_frontmatter(article: dict, image_path: str = '') -> str:
     category = article.get('category', 'general')
     meta_desc = article.get('meta_description', '')
 
-    # Get first product for frontmatter metadata
+    # Use first product for metadata
     products = article.get('products', [])
+
+    # Find first product with details
     first_product = products[0] if products else {}
 
-    # Get affiliate link from first product
+    # Get affiliate link
     aliexpress_link = ''
     for p in products:
         if p.get('affiliate_link'):
             aliexpress_link = p['affiliate_link']
             break
 
-    # Format tags as YAML list
     tags_yaml = '\n  - ' + '\n  - '.join(tags)
-
-    # Use the first product's AliExpress image URL directly (no download needed)
     product_image = first_product.get('image', '') or ''
 
     frontmatter = f"""---
@@ -325,88 +408,105 @@ draft: false
 
 
 def render_article_body(article: dict) -> str:
-    """Render article body in markdown with product cards."""
-    lines = []
+    """Render article body in markdown - repair guide format.
 
-    # Summary
+    The structure follows: problem → diagnose → cause → fix → parts.
+    Products are shown only at the end in a compact parts list.
+    """
+    lines = []
     summary = article.get('summary', '')
     if summary:
         lines.append(f'> {summary}')
         lines.append('')
 
-    # Body sections
-    for section in article.get('body_sections', []):
-        heading = section.get('heading', '')
-        text = section.get('text', '')
-        pros = section.get('pros', [])
-        cons = section.get('cons', [])
-        best_for = section.get('best_for', '')
-        embed_ids = section.get('embed_product_ids', [])
-
-        if heading:
-            lines.append(f'## {heading}')
-            lines.append('')
-
-        if text:
-            lines.append(text)
-            lines.append('')
-
-        # Pros & Cons
-        if pros or cons:
-            lines.append('| ✅ Pros | ❌ Cons |')
-            lines.append('|--------|--------|')
-            max_len = max(len(pros), len(cons), 1)
-            for i in range(max_len):
-                pro = pros[i] if i < len(pros) else ''
-                con = cons[i] if i < len(cons) else ''
-                lines.append(f'| {pro} | {con} |')
-            lines.append('')
-
-        # Best for badge
-        if best_for:
-            lines.append(f'> **🏆 {best_for}**')
-            lines.append('')
-
-        # Embed product cards for products in this section
-        products = article.get('products', [])
-        for p in products:
-            if p['id'] in embed_ids:
-                link = p.get('affiliate_link', '') or '#'
-                lines.append(f'**{p["short_name"]}**')
-                lines.append(f'- 💰 Price: **${p["price"]}**')
-                if p.get('rating'):
-                    lines.append(f'- ⭐ Rating: {p["rating"]}/5')
-                if p.get('sales'):
-                    lines.append(f'- 📦 Monthly Sales: {p["sales"]}')
-                if link and link != '#':
-                    lines.append(f'- [🔗 Check Price on AliExpress]({link})')
-                lines.append('')
-
-    # Final verdict
-    final_verdict = article.get('final_verdict', '')
-    if final_verdict:
-        lines.append('---')
+    # === 1. PROBLEM DETAIL ===
+    problem = article.get('problem_detail', '')
+    if problem:
+        lines.append('## What\'s Happening — Symptoms in Detail')
         lines.append('')
-        lines.append('## Final Verdict')
-        lines.append('')
-        lines.append(final_verdict)
+        lines.append(problem)
         lines.append('')
 
-    # Product summary table
+    # === 2. DIAGNOSIS ===
+    diagnosis = article.get('diagnosis', '')
+    if diagnosis:
+        lines.append('## How to Diagnose the Problem Step by Step')
+        lines.append('')
+        lines.append(diagnosis)
+        lines.append('')
+
+    # === 3. ROOT CAUSE ===
+    root_cause = article.get('root_cause', '')
+    if root_cause:
+        lines.append('## Why This Happens — Root Cause')
+        lines.append('')
+        lines.append(root_cause)
+        lines.append('')
+
+    # === 4. FIX ASSESSMENT ===
+    fix = article.get('fix_assessment', '')
+    if fix:
+        lines.append('## Can You Fix It Yourself?')
+        lines.append('')
+        lines.append(fix)
+        lines.append('')
+
+    # === 5. COST ANALYSIS ===
+    cost = article.get('cost_analysis', '')
+    if cost:
+        lines.append('## Cost Breakdown — DIY vs Professional')
+        lines.append('')
+        lines.append(cost)
+        lines.append('')
+
+    # === 6. REPAIR PROCESS ===
+    repair = article.get('repair_process', '')
+    if repair:
+        lines.append('## Repair Process Overview')
+        lines.append('')
+        lines.append(repair)
+        lines.append('')
+
+    # === 7. AFTER REPAIR ===
+    after = article.get('after_repair', '')
+    if after:
+        lines.append('## After the Repair — Testing & Verification')
+        lines.append('')
+        lines.append(after)
+        lines.append('')
+
+    # === PARTS YOU'LL NEED — clean table at the very end ===
     products = article.get('products', [])
-    if len(products) > 1:
+    if products:
         lines.append('---')
         lines.append('')
-        lines.append('## Products Mentioned')
+        lines.append('## Parts You\'ll Need')
         lines.append('')
-        lines.append('| Product | Price | Rating | Sales |')
-        lines.append('|---------|-------|--------|-------|')
+        lines.append('Here are the parts that match this repair. Click the link to check the current price on AliExpress.')
+        lines.append('')
+        lines.append('| Product | Price |')
+        lines.append('|---------|-------|')
+
         for p in products:
-            name = p.get('short_name', p.get('title', '')[:40])
-            price = f'${p.get("price", "?")}' if p.get('price') else '?'
-            rating = f'{p.get("rating", "?")}/5' if p.get('rating') else '?'
-            sales = p.get('sales', 0)
-            lines.append(f'| {name} | {price} | {rating} | {sales} |')
+            name = p.get('short_name', 'Replacement part')
+            price = f"${p.get('price', '?')}" if p.get('price') else 'Check price'
+            link = p.get('affiliate_link', '')
+            if link:
+                name = f'[{name}]({link})'
+            lines.append(f'| {name} | {price} |')
+
+        lines.append('')
+        lines.append('> Prices and availability are subject to change on AliExpress.')
+        lines.append('')
+
+        lines.append('')
+
+    # === FINAL VERDICT ===
+    verdict = article.get('final_verdict', '')
+    if verdict:
+        lines.append('---')
+        lines.append('')
+        lines.append(f'_{verdict}_')
         lines.append('')
 
     return '\n'.join(lines)
@@ -435,6 +535,9 @@ def generate_and_save(config_path: str, output_dir: str) -> dict:
         fallback_map = {
             'printer': ['printer fuser assembly', 'pickup roller printer', 'drum unit printer', 'printer toner cartridge'],
             'drone': ['drone motor replacement', 'DJI propeller', 'drone battery', 'FPV camera', 'drone arm parts'],
+            'motor': ['stepper motor driver', 'gearbox motor reduction', 'servo motor encoder', 'AC motor capacitor'],
+            'sensor': ['proximity sensor switch', 'photoelectric sensor', 'temperature controller', 'encoder cable'],
+            'compressor': ['air compressor parts', 'pneumatic solenoid valve', 'compressor pressure switch', 'air cylinder'],
         }
         fallbacks = fallback_map.get(niche_key, ['printer repair parts'])
         for fb in fallbacks:
