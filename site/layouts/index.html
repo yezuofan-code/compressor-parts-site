@@ -1,0 +1,80 @@
+{{ define "main" }}
+<main class="main-content">
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Drone Repair Guides &amp; Replacement Parts</h1>
+      <p>Crashed your drone? Gimbal acting up? We show you exactly how to fix it — with the right parts, tools, and step-by-step instructions.</p>
+    </div>
+  </section>
+
+  <section class="featured-posts">
+    <h2 class="section-title">Latest Repair Guides</h2>
+    <div class="posts-grid">
+      {{ range first 6 .Site.RegularPages }}
+      <article class="post-card">
+        {{ if .Params.image }}
+        <a href="{{ .RelPermalink }}" class="post-card-image">
+          <img src="{{ .Params.image }}" alt="{{ .Title }}" loading="lazy" />
+        </a>
+        {{ end }}
+        <div class="post-card-content">
+          <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+          <div class="post-card-meta">
+            <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+            {{ with .Params.tags }}{{ range first 3 . }}<a href="/tags/{{ . | urlize }}/" class="tag">#{{ . }}</a>{{ end }}{{ end }}
+          </div>
+          <div class="post-card-summary">{{ .Summary | plainify | truncate 120 }}</div>
+          {{ if .Params.price }}
+          <div class="post-card-price">
+            <span class="price">${{ .Params.price }}</span>
+            <span class="rating">⭐ {{ .Params.rating }}/5</span>
+          </div>
+          {{ end }}
+          <a href="{{ .RelPermalink }}" class="read-more">Read Repair Guide →</a>
+        </div>
+      </article>
+      {{ end }}
+    </div>
+  </section>
+
+  <section class="categories-section">
+    <h2 class="section-title">Common Problems</h2>
+    <div class="category-grid">
+      <a href="/tags/crash-damage/" class="category-card">
+        <div class="category-icon">💥</div>
+        <h3>Crash Damage</h3>
+        <p>Broken arms, cracked frames, landing gear repair</p>
+      </a>
+      <a href="/tags/gimbal/" class="category-card">
+        <div class="category-icon">📷</div>
+        <h3>Gimbal & Camera</h3>
+        <p>Ribbon cable, shaking, no signal, blurry fix</p>
+      </a>
+      <a href="/tags/motor/" class="category-card">
+        <div class="category-icon">⚙️</div>
+        <h3>Motor Issues</h3>
+        <p>Not spinning, grinding noise, burnt out replacement</p>
+      </a>
+      <a href="/tags/battery/" class="category-card">
+        <div class="category-icon">🔋</div>
+        <h3>Battery Problems</h3>
+        <p>Swelling, not charging, connector broken</p>
+      </a>
+      <a href="/tags/fpv-antenna/" class="category-card">
+        <div class="category-icon">📡</div>
+        <h3>FPV & Antenna</h3>
+        <p>No signal, antenna broken, range issues</p>
+      </a>
+      <a href="/tags/controller/" class="category-card">
+        <div class="category-icon">🎮</div>
+        <h3>Controller</h3>
+        <p>Stick drift, screen crack, not connecting</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="affiliate-notice">
+    <p><small>As an AliExpress Associate, we earn from qualifying purchases. Prices and availability are subject to change.</small></p>
+  </section>
+</main>
+{{ end }}

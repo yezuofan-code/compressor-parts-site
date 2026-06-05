@@ -1,0 +1,63 @@
+{{ define "main" }}
+<article class="post-single">
+  <header class="post-header">
+    {{ if .Params.image }}
+    <div class="post-cover">
+      <img src="{{ .Params.image }}" alt="{{ .Title }}" loading="lazy" />
+    </div>
+    {{ end }}
+    <h1 class="post-title">{{ .Title }}</h1>
+
+    <div class="post-meta">
+      <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+      {{ with .Params.categories }}
+        &middot; {{ range . }}
+          <a href="/categories/{{ . | urlize }}/">{{ . }}</a>
+        {{ end }}
+      {{ end }}
+      {{ with .Params.tags }}
+        &middot;
+        {{ range . }}
+          <a href="/tags/{{ . | urlize }}/">#{{ . }}</a>
+        {{ end }}
+      {{ end }}
+    </div>
+
+    {{ if .Params.price }}
+    <div class="product-quick-info">
+      <table class="spec-table">
+        <tr><th>Price</th><td>${{ .Params.price }}</td></tr>
+        <tr><th>Rating</th><td>{{ .Params.rating }}/5 ⭐</td></tr>
+        <tr><th>Monthly Sales</th><td>{{ .Params.sales }}</td></tr>
+      </table>
+      {{ if .Params.aliexpress_link }}
+      <a href="{{ .Params.aliexpress_link }}" class="buy-button" target="_blank" rel="nofollow sponsored">
+        Check Latest Price on AliExpress →
+      </a>
+      {{ end }}
+    </div>
+    {{ end }}
+  </header>
+
+  <div class="post-content">
+    {{ .Content }}
+  </div>
+
+  {{ if .Params.aliexpress_link }}
+  <div class="post-footer-cta">
+    <div class="cta-box">
+      <p><strong>Prices and availability are subject to change.</strong></p>
+      <a href="{{ .Params.aliexpress_link }}" class="buy-button large" target="_blank" rel="nofollow sponsored">
+        ✅ Check Price &amp; Availability on AliExpress
+      </a>
+    </div>
+  </div>
+  {{ end }}
+
+  <footer class="post-footer">
+    <div class="affiliate-disclosure">
+      <small>We may earn a commission if you purchase through our links. As an AliExpress Associate, we earn from qualifying purchases.</small>
+    </div>
+  </footer>
+</article>
+{{ end }}

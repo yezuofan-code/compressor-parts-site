@@ -1,0 +1,48 @@
+name: Daily Content Publish
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write
+
+env:
+  ALIEXPRESS_APP_KEY: ${{ secrets.ALIEXPRESS_APP_KEY }}
+  ALIEXPRESS_APP_SECRET: ${{ secrets.ALIEXPRESS_APP_SECRET }}
+  ALIEXPRESS_TRACKING_ID: ${{ secrets.ALIEXPRESS_TRACKING_ID || 'huanhaiwan' }}
+  LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+  IMAGE_API_KEY: ${{ secrets.IMAGE_API_KEY }}
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r scripts/requirements.txt
+      - name: Generate content
+        run: |
+          python scripts/publish.py config.yaml || \
+          python scripts/publish.py config.yaml || \
+          echo 'Content generation failed, continuing with existing'
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.124.0'
+          extended: true
+      - name: Build Hugo site
+        run: cd site && hugo --minify --destination ../public
+      - name: Commit and push
+        run: |
+          git config user.name 'Drone Repair Bot'
+          git config user.email 'bot@dronerepair.guide'
+          git add .
+          git diff --cached --quiet || git commit -m "Daily update $(date +'%Y-%m-%d')"
+          git push

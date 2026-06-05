@@ -1,0 +1,12 @@
+name = "Magazine"
+license = "MIT"
+licenselink = "https://github.com/niche-printer-parts/magazine"
+description = "Custom magazine theme for printer parts review"
+homepage = ""
+tags = []
+features = []
+min_version = "0.110.0"
+
+[author]
+  name = "Printer Parts Review"
+  homepage = ""

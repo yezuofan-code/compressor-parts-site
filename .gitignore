@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+*.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Hugo output
+site/public/
+site/resources/
+public/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generated content (tracked via git)
+# Uncomment to prevent accidental commit of generated content
+# site/content/posts/*.md
+# site/static/images/*.jpg
+# site/static/images/*.png

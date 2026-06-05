@@ -1,0 +1,36 @@
+{{ define "main" }}
+<main class="main-content">
+  <header class="page-header">
+    <h1>{{ .Title }}</h1>
+    {{ with .Content }}<div class="page-description">{{ . }}</div>{{ end }}
+  </header>
+
+  <div class="posts-grid">
+    {{ range .Paginator.Pages }}
+    <article class="post-card">
+      {{ if .Params.image }}
+      <a href="{{ .RelPermalink }}" class="post-card-image">
+        <img src="{{ .Params.image }}" alt="{{ .Title }}" loading="lazy" />
+      </a>
+      {{ end }}
+      <div class="post-card-content">
+        <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+        <div class="post-card-meta">
+          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+          {{ with .Params.tags }}{{ range . }}<a href="/tags/{{ . | urlize }}/" class="tag">#{{ . }}</a>{{ end }}{{ end }}
+        </div>
+        <div class="post-card-summary">{{ .Summary | plainify | truncate 150 }}</div>
+        {{ if .Params.price }}
+        <div class="post-card-price">
+          <span class="price">${{ .Params.price }}</span>
+          <span class="rating">⭐ {{ .Params.rating }}/5</span>
+        </div>
+        {{ end }}
+        <a href="{{ .RelPermalink }}" class="read-more">Read Review →</a>
+      </div>
+    </article>
+    {{ end }}
+  </div>
+  {{ template "_internal/pagination.html" . }}
+</main>
+{{ end }}

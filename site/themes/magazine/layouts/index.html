@@ -1,0 +1,104 @@
+{{ define "main" }}
+<main class="main-content">
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Air Compressor Repair — Troubleshooting & Parts</h1>
+      <p>Step-by-step repair guides for air compressors, pneumatic cylinders, solenoid valves, and more. Diagnose the problem, find the right part, fix it yourself.</p>
+    </div>
+  </section>
+
+  <section class="featured-posts">
+    <h2 class="section-title">Latest Reviews</h2>
+    <div class="posts-grid">
+      {{ range first 6 .Site.RegularPages }}
+      <article class="post-card">
+        {{ if .Params.image }}
+        <a href="{{ .RelPermalink }}" class="post-card-image">
+          <img src="{{ .Params.image }}" alt="{{ .Title }}" loading="lazy" />
+        </a>
+        {{ end }}
+        <div class="post-card-content">
+          <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+          <div class="post-card-meta">
+            <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+            {{ with .Params.tags }}{{ range first 3 . }}<a href="/tags/{{ . | urlize }}/" class="tag">#{{ . }}</a>{{ end }}{{ end }}
+          </div>
+          <div class="post-card-summary">{{ .Summary | plainify | truncate 120 }}</div>
+          {{ if .Params.price }}
+          <div class="post-card-price">
+            <span class="price">${{ .Params.price }}</span>
+            <span class="rating">⭐ {{ .Params.rating }}/5</span>
+          </div>
+          {{ end }}
+          <a href="{{ .RelPermalink }}" class="read-more">Read Full Review →</a>
+        </div>
+      </article>
+      {{ end }}
+    </div>
+  </section>
+
+  <section class="categories-section">
+    <h2 class="section-title">Common Motor Problems</h2>
+    <div class="category-grid">
+      <a href="/tags/pressure-switch/" class="category-card">
+        <div class="category-icon">🔧</div>
+        <h3>Pressure Switches</h3>
+        <p>Not building pressure, adjustment</p>
+      </a>
+      <a href="/tags/pneumatic-cylinder/" class="category-card">
+        <div class="category-icon">🔄</div>
+        <h3>Pneumatic Cylinders</h3>
+        <p>Seal replacement, speed control</p>
+      </a>
+      <a href="/tags/solenoid-valve/" class="category-card">
+        <div class="category-icon">⚡</div>
+        <h3>Solenoid Valves</h3>
+        <p>Not working, coil burned, rebuild</p>
+      </a>
+      <a href="/tags/filters-regulators/" class="category-card">
+        <div class="category-icon">💧</div>
+        <h3>Filters & Regulators</h3>
+        <p>Water trap, lubricator, FRL service</p>
+      </a>
+      <a href="/tags/piping-fittings/" class="category-card">
+        <div class="category-icon">🔗</div>
+        <h3>Piping & Fittings</h3>
+        <p>Leak repair, tubing, connectors</p>
+      </a>
+      <a href="/tags/dryer-cooler/" class="category-card">
+        <div class="category-icon">❄️</div>
+        <h3>Dryers & Coolers</h3>
+        <p>Not working, auto drain, cleaning</p>
+      </a>
+    </div>
+        <h3>Noise & Vibration</h3>
+        <p>Bearing noise, grinding, rattling, misalignment</p>
+      </a>
+      <a href="/tags/gearbox/" class="category-card">
+        <div class="category-icon">⚙️</div>
+        <h3>Gearbox Issues</h3>
+        <p>Oil leaks, seal failure, gear wear, noise</p>
+      </a>
+      <a href="/tags/encoder/" class="category-card">
+        <div class="category-icon">📡</div>
+        <h3>Encoder & Control</h3>
+        <p>Signal loss, encoder error, driver board repair</p>
+      </a>
+      <a href="/tags/servo-motor/" class="category-card">
+        <div class="category-icon">🎯</div>
+        <h3>Servo Motor</h3>
+        <p>Not moving, jittering, tuning, brake issues</p>
+      </a>
+      <a href="/tags/stepper-motor/" class="category-card">
+        <div class="category-icon">🔄</div>
+        <h3>Stepper Motor</h3>
+        <p>Skipping steps, driver fault, wiring problems</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="affiliate-notice">
+    <p><small>As an AliExpress Associate, we earn from qualifying purchases. Prices and availability are subject to change.</small></p>
+  </section>
+</main>
+{{ end }}

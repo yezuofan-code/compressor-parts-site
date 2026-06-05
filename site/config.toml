@@ -1,0 +1,48 @@
+baseURL = "https://compressor-parts.huanghaiwan.com"
+title = "Air Compressor Repair Guide"
+theme = "magazine"
+languageCode = "en-us"
+defaultContentLanguage = "en"
+
+enableRobotsTXT = true
+enableEmoji = true
+
+[pagination]
+  pagerSize = 12
+
+[params]
+  description = "Air compressor and pneumatic system repair guides, troubleshooting, and replacement parts"
+  keywords = ["compressor repair", "industrial parts", "replacement parts"]
+
+  ShowReadingTime = true
+  ShowShareButtons = false
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowToc = true
+  TocOpen = false
+  defaultTheme = "light"
+  disableThemeToggle = true
+  social = false
+  footerText = "As an AliExpress Associate, we earn from qualifying purchases. Prices and availability are subject to change."
+
+[params.assets]
+  disableHLJS = true
+  disableFingerprinting = true
+
+[menu]
+  main = [
+    { identifier = "categories", name = "Categories", url = "/categories/", weight = 1 },
+    { identifier = "tags", name = "Parts", url = "/tags/", weight = 2 },
+    { identifier = "about", name = "About", url = "/about/", weight = 3 },
+  ]
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[outputs]
+  home = ["HTML", "RSS"]
+  section = ["HTML", "RSS"]

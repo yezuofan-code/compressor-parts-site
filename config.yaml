@@ -1,0 +1,45 @@
+# Air Compressor & Pneumatic Repair - Configuration
+niche_key: "compressor"
+niche_name: "Air Compressor & Pneumatic Repair"
+site_title: "Air Compressor Repair Guide"
+site_description: "Air compressor and pneumatic system repair guides, troubleshooting, and replacement parts"
+subdomain: "compressor-parts"
+
+min_price: 1
+max_price: 200
+category_ids: ""
+daily_articles: 1
+max_products_per_article: 3
+
+output_dir: "site/content/posts"
+static_dir: "site/static"
+
+keywords:
+  - "air compressor not building pressure fix"
+  - "pneumatic cylinder seal replacement"
+  - "water trap separator not working"
+  - "compressor pressure switch replacement"
+  - "air compressor oil leak repair"
+  - "pneumatic solenoid valve not working fix"
+  - "compressor unloader valve replacement"
+  - "air receiver tank drain valve fix"
+  - "compressor motor overheating troubleshoot"
+  - "pneumatic fitting leak fix"
+  - "compressor belt replacement guide"
+  - "air filter regulator lubricator service"
+  - "compressor check valve replacement"
+  - "pneumatic actuator not stroking fix"
+  - "compressor safety valve test"
+  - "air cylinder speed control adjustment"
+  - "compressor head gasket replacement"
+  - "pneumatic tubing crack repair"
+  - "compressor piston ring replacement"
+  - "air dryer not working troubleshoot"
+  - "pneumatic manifold assembly replace"
+  - "compressor vibration isolation fix"
+  - "air line lubricator not feeding"
+  - "pneumatic directional control valve repair"
+  - "air cylinder cushion adjustment"
+  - "compressor auto drain valve replacement"
+  - "pneumatic hose reel repair"
+  - "compressor intake filter replacement"
