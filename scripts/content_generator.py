@@ -14,7 +14,7 @@ from typing import Optional
 # API config from environment
 LLM_API_KEY = os.environ.get('LLM_API_KEY', 'sk-0bc443950c3a4708ae9f68f90056a61d')
 LLM_API_URL = os.environ.get('LLM_API_URL', 'https://api.deepseek.com/chat/completions')
-LLM_MODEL = os.environ.get('LLM_MODEL', 'deepseek-chat')
+LLM_MODEL = os.environ.get('LLM_MODEL', 'deepseek-v4-flash')
 
 # Available article types (randomly pick each day)
 ARTICLE_TYPES = [
